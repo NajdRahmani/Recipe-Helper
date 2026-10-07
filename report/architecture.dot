@@ -1,0 +1,30 @@
+digraph recipe_helper {
+  rankdir=LR;
+  graph [fontname="Arial", bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#4263a5", fontname="Arial", margin="0.16,0.10"];
+  edge [color="#6b7280", fontname="Arial", fontsize=10];
+
+  form [label="Form Trigger"];
+  input [label="Input Type\nimage | text"];
+  router [label="Router\ngemma3:4b"];
+  vi [label="Vision ingredients\ngemma3:4b"];
+  vd [label="Vision dish\ngemma3:4b"];
+  rp [label="Recipe parser\ngemma3:4b"];
+  norm [label="Normalize"];
+  embed [label="Embed query\nbge-m3"];
+  rag [label="RAG search\nQdrant top-5"];
+  chef [label="Chef\ngemma3:4b"];
+  validator [label="Validator\nqwen2.5:3b"];
+  output [label="Form completion"];
+
+  form -> input;
+  input -> router [label="image"];
+  input -> norm [label="text"];
+  router -> vi [label="ingredients"];
+  router -> vd [label="dish"];
+  router -> rp [label="document"];
+  vi -> norm;
+  vd -> norm;
+  rp -> norm;
+  norm -> embed -> rag -> chef -> validator -> output;
+}
