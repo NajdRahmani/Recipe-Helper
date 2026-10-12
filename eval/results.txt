@@ -4,9 +4,6 @@ recipes_fixed k=10: hit@k=1.00 MRR=0.76
 recipes_struct k=3: hit@k=0.90 MRR=0.68
 recipes_struct k=5: hit@k=0.90 MRR=0.68
 recipes_struct k=10: hit@k=1.00 MRR=0.70
-
-Notes:
-- 10 test queries, loose descriptions of recipes from the first 2000 rows of Food.com RAW_recipes.csv.
-- Embedding model: bge-m3 (1024 dims), vector store: Qdrant, cosine distance.
-- Chosen: recipes_fixed, k=5 (best MRR, 0.90 hit@5).
-- Small test set, so the difference between strategies is about one query.
+recipes_rich k=3: hit@k=0.90 MRR=0.78
+recipes_rich k=5: hit@k=1.00 MRR=0.81
+recipes_rich k=10: hit@k=1.00 MRR=0.81

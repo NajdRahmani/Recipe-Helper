@@ -1,0 +1,8 @@
+
+source recipe EXCLUDED (realistic), 40 cases
+  vector top-1      : avg missing 6.83 | missing<=2: 25% | user-ingredient coverage 45%
+  top-40 + rerank   : avg missing 1.88 | missing<=2: 78% | user-ingredient coverage 52%
+
+source recipe in corpus, 40 cases
+  vector top-1      : avg missing 4.17 | missing<=2: 38% | user-ingredient coverage 71%
+  top-40 + rerank   : avg missing 1.38 | missing<=2: 90% | user-ingredient coverage 73%

@@ -1,30 +1,42 @@
-digraph recipe_helper {
-  rankdir=LR;
-  graph [fontname="Arial", bgcolor="white", pad="0.2"];
-  node [shape=box, style="rounded,filled", fillcolor="#eef4ff", color="#4263a5", fontname="Arial", margin="0.16,0.10"];
-  edge [color="#6b7280", fontname="Arial", fontsize=10];
+digraph G {
+  rankdir=LR; fontname="Helvetica"; node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f4f4f4"]; edge [fontname="Helvetica", fontsize=9];
+  tg   [label="Telegram\nmessage", fillcolor="#d6ecff"];
+  sw   [label="Input Type\n(photo or text)"];
+  tg -> sw;
 
-  form [label="Form Trigger"];
-  input [label="Input Type\nimage | text"];
-  router [label="Router\ngemma3:4b"];
-  vi [label="Vision ingredients\ngemma3:4b"];
-  vd [label="Vision dish\ngemma3:4b"];
-  rp [label="Recipe parser\ngemma3:4b"];
-  norm [label="Normalize"];
-  embed [label="Embed query\nbge-m3"];
-  rag [label="RAG search\nQdrant top-5"];
-  chef [label="Chef\ngemma3:4b"];
-  validator [label="Validator\nqwen2.5:3b"];
-  output [label="Form completion"];
+  subgraph cluster_text { label="text path"; style=dashed;
+    ti [label="Text intent\n(qwen2.5:3b)", fillcolor="#ffe9b3"];
+    nt [label="Normalize text"];
+    ti -> nt; }
+  sw -> ti [label="text"];
 
-  form -> input;
-  input -> router [label="image"];
-  input -> norm [label="text"];
-  router -> vi [label="ingredients"];
-  router -> vd [label="dish"];
-  router -> rp [label="document"];
-  vi -> norm;
-  vd -> norm;
-  rp -> norm;
-  norm -> embed -> rag -> chef -> validator -> output;
+  subgraph cluster_img { label="image path"; style=dashed;
+    b64 [label="Telegram file\n+ base64"];
+    rt  [label="Router\n(gemma3:4b vision)", fillcolor="#ffe9b3"];
+    sel [label="Route by type"];
+    vi  [label="Vision ingredients", fillcolor="#ffe9b3"];
+    vd  [label="Vision dish", fillcolor="#ffe9b3"];
+    rp  [label="Recipe parser", fillcolor="#ffe9b3"];
+    n1 [label="Normalize 1\nmode=ingredients"]; n2 [label="Normalize 2\nmode=dish"]; n3 [label="Normalize 3\nmode=document"];
+    b64 -> rt -> sel; sel -> vi [label="ingredients"]; sel -> vd [label="dish"]; sel -> rp [label="document"];
+    vi -> n1; vd -> n2; rp -> n3; }
+  sw -> b64 [label="photo"];
+
+  hq [label="Has query?", shape=diamond, fillcolor="#ffffff"];
+  nt -> hq; n1 -> hq; n2 -> hq; n3 -> hq;
+  hq -> nomsg [label="no"]; nomsg [label="help message", fillcolor="#eeeeee"];
+  isdoc [label="document?", shape=diamond, fillcolor="#ffffff"];
+  hq -> isdoc [label="yes"];
+  docans [label="Document answer\n(code: show parsed recipe)", fillcolor="#d9f2d9"];
+  isdoc -> docans [label="yes"];
+
+  emb [label="Embed query\n(bge-m3)"]; qd [label="Qdrant search\nrecipes_rich\n40 hits (ingredients) / 5\nfilters: minutes, vegetarian", fillcolor="#e6e0ff"];
+  rank [label="Rank recipes (code)\nfewest missing ingredients\nstaples ignored", fillcolor="#d9f2d9"];
+  isdoc -> emb [label="no"]; emb -> qd -> rank;
+  chef [label="Chef\n(intro, substitutions, tip)", fillcolor="#ffe9b3"];
+  pc [label="Parse chef (code)"]; val [label="Validator\n(qwen2.5:3b)", fillcolor="#ffe9b3"];
+  fin [label="Final answer (code)\nHAVE/MISSING only for ingredient inputs", fillcolor="#d9f2d9"];
+  rank -> chef -> pc -> val -> fin;
+  out [label="Telegram reply", fillcolor="#d6ecff"];
+  fin -> out; docans -> out;
 }

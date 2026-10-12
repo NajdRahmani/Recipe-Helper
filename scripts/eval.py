@@ -3,6 +3,8 @@ from qdrant_client import QdrantClient
 
 q = QdrantClient(url="http://localhost:6333")
 qs = pd.read_csv("eval/queries.csv")
+COLLECTIONS = ["recipes_fixed", "recipes_struct", "recipes_rich"]
+
 
 def run(col, k):
     hits, rr = 0, 0
@@ -14,6 +16,10 @@ def run(col, k):
             rr += 1 / (names.index(row["expected_name"]) + 1)
     print(f"{col} k={k}: hit@k={hits/len(qs):.2f} MRR={rr/len(qs):.2f}")
 
-for col in ["recipes_fixed", "recipes_struct"]:
+
+for col in COLLECTIONS:
+    if not q.collection_exists(col):
+        print(col, "not found, skipped")
+        continue
     for k in [3, 5, 10]:
         run(col, k)

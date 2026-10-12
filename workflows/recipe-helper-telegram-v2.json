@@ -1,0 +1,1090 @@
+{
+  "name": "recipe-helper-telegram-v2",
+  "nodes": [
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.photo ? \"image\" : \"text\" }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "196b9e16-3425-4c38-9fbe-ba71261adef7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bece5f31-8a25-4b9d-bae7-0bd93b04d528",
+                    "leftValue": "={{ $json.message.photo ? \"image\" : \"text\" }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "5fcfe46d-4ff8-4171-93ca-a55056f41f7d",
+      "name": "Input Type"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You classify an image sent to a recipe assistant. Return ONLY JSON: {\\\"type\\\": \\\"ingredients_photo\\\" | \\\"dish_photo\\\" | \\\"recipe_document\\\", \\\"confidence\\\": number between 0 and 1}. Definitions: ingredients_photo = raw or packaged food items that are not cooked yet (fridge, counter, shelf, groceries, vegetables, meat on a board). dish_photo = one prepared or cooked dish ready to eat (on a plate, in a bowl or in a pan). recipe_document = a screenshot, page, book or handwritten note whose main content is readable text such as a title, an ingredient list or steps. Rules: if the image mainly contains readable recipe text, answer recipe_document even if food is also shown. If the food is cooked, answer dish_photo even if raw ingredients are visible around it. If unsure, answer ingredients_photo with a low confidence.\" }, { role: \"user\", content: \"Classify this image.\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        -144
+      ],
+      "id": "d78513b7-2ca2-412c-b993-ad6fbe693ee0",
+      "name": "Router",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nconst t = String(o.type || \"\").toLowerCase();\nconst type = t.includes(\"document\") || t.includes(\"recipe\") ? \"recipe_document\"\n  : t.includes(\"dish\") ? \"dish_photo\" : \"ingredients_photo\";\nreturn [{ json: { type, confidence: Number(o.confidence) || 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -144
+      ],
+      "id": "3ee3e717-9448-4815-8179-81d5f28dbc5f",
+      "name": "Parse router"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "ingredients_photo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ingredients"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "dish_photo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "dish"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "recipe_document",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "document"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1136,
+        -352
+      ],
+      "id": "6d6b09d1-6fcc-4a5a-a414-6e7a5b287bce",
+      "name": "Route by type"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You identify food ingredients in a photo for a cooking assistant. Return ONLY JSON: {\\\"ingredients\\\": [{\\\"name\\\": string, \\\"confidence\\\": number between 0 and 1}], \\\"uncertain\\\": [string]}. Rules: 1) list only food items you can clearly see; ignore plates, containers, utensils, napkins and the background. 2) use short singular English names of the food itself (chicken, tomato, rice, olive oil), not colours or descriptions. 3) read labels on packaged items when they are legible. 4) give a confidence below 0.6 when an item is partly hidden or you are guessing, and also put it in uncertain. 5) never add items that are typical for a dish but not visible. Example: {\\\"ingredients\\\": [{\\\"name\\\": \\\"tomato\\\", \\\"confidence\\\": 0.95}, {\\\"name\\\": \\\"egg\\\", \\\"confidence\\\": 0.9}], \\\"uncertain\\\": [\\\"cheese\\\"]}\" }, { role: \"user\", content: \"List the ingredients.\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        -224
+      ],
+      "id": "b3810b40-f10b-419f-83a3-5357a30a308b",
+      "name": "Vision ingredients",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You identify a prepared dish in a photo. Return ONLY JSON: {\\\"dish\\\": string, \\\"likely_ingredients\\\": [string]}. dish = the common English name of the dish as it would appear in a recipe title (for example lasagna, chicken curry, caesar salad), 1 to 4 words, no adjectives such as delicious. If several dishes appear, name the main one.\" }, { role: \"user\", content: \"What dish is this?\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        -80
+      ],
+      "id": "05199abd-30d1-478d-bfeb-8e0e44ee5e82",
+      "name": "Vision dish",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You extract a written recipe from an image. Return ONLY JSON: {\\\"title\\\": string, \\\"servings\\\": string or null, \\\"time\\\": string or null, \\\"ingredients\\\": [string], \\\"steps\\\": [string]}. Rules: copy each ingredient line exactly as written, including quantity and unit; copy each step in order without numbering; use null for a missing field and an empty array for a missing list; never invent quantities, ingredients or steps; keep the original language of the text.\" }, { role: \"user\", content: \"Extract the recipe.\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        64
+      ],
+      "id": "f7101b21-c74e-467e-a89b-144592f60a4c",
+      "name": "Recipe parser",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nconst seen = new Set(), ing = [], dropped = [];\nfor (const i of (Array.isArray(o.ingredients) ? o.ingredients : [])) {\n  const name = String(i && typeof i === \"object\" ? (i.name || \"\") : i).toLowerCase().trim();\n  if (!name || seen.has(name)) continue;\n  seen.add(name);\n  const c = i && typeof i === \"object\" && i.confidence !== undefined ? Number(i.confidence) : 1;\n  (c >= 0.6 ? ing : dropped).push(name);\n}\nconst caption = (($('Telegram Trigger').first().json.message || {}).caption || \"\").toLowerCase();\nconst m = caption.match(/(\\d+)\\s*(min|minutes|minute)/);\nreturn [{ json: {\n  mode: \"ingredients\",\n  source: \"photo\",\n  query: ing.length ? \"Ingredients: \" + ing.join(\", \") : \"\",\n  user_ingredients: ing,\n  uncertain: dropped.concat(Array.isArray(o.uncertain) ? o.uncertain.map(x => String(x).toLowerCase()) : []),\n  max_minutes: m ? Number(m[1]) : null,\n  vegetarian: /vegetarian|vegan|v[ée]g[ée]tarien/.test(caption)\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -224
+      ],
+      "id": "c42958f1-9bd9-4de6-9593-9ed787080298",
+      "name": "Normalize 1"
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nconst dish = String(o.dish || \"\").toLowerCase().trim();\nreturn [{ json: { mode: \"dish\", source: \"photo\", query: dish, user_ingredients: [], uncertain: [], max_minutes: null, vegetarian: false } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -80
+      ],
+      "id": "5be6d316-a920-402a-bebb-2163b8ac02b8",
+      "name": "Normalize 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nconst line = x => typeof x === \"string\" ? x.trim()\n  : [x && x.quantity, x && (x.item || x.name)].filter(Boolean).join(\" \").trim();\nconst ingredients = (Array.isArray(o.ingredients) ? o.ingredients : []).map(line).filter(Boolean);\nconst steps = (Array.isArray(o.steps) ? o.steps : []).map(s => String(s).trim()).filter(Boolean);\nconst title = String(o.title || \"\").trim();\nconst ok = ingredients.length > 0 || steps.length > 0;\nconst time = o.time != null ? o.time : (o.time_minutes != null ? o.time_minutes : null);\nreturn [{ json: {\n  mode: \"document\", source: \"photo\",\n  query: ok ? (title || \"recipe from document\") : \"\",\n  user_ingredients: [], uncertain: [],\n  parsed: { title, servings: o.servings != null ? o.servings : null, time, ingredients, steps }\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        64
+      ],
+      "id": "96578a1b-9739-4dbe-96a6-a3087af1f853",
+      "name": "Normalize 3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = ((($('Telegram Trigger').first().json.message || {}).text) || \"\").trim();\nlet o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nif (!raw || raw.startsWith(\"/\")) {\n  return [{ json: { mode: \"text\", source: \"text\", query: \"\", user_ingredients: [], uncertain: [] } }];\n}\nconst items = [...new Set((Array.isArray(o.items) ? o.items : [])\n  .map(x => String(x).toLowerCase().trim()).filter(Boolean))];\nconst maxMin = Number(o.max_minutes) > 0 ? Number(o.max_minutes) : null;\nconst veg = o.vegetarian === true;\nif (o.intent === \"ingredients\" && items.length) {\n  return [{ json: { mode: \"ingredients\", source: \"text\", query: \"Ingredients: \" + items.join(\", \"),\n    user_ingredients: items, uncertain: [], max_minutes: maxMin, vegetarian: veg } }];\n}\nconst dish = ((o.dish && String(o.dish).trim()) || raw).toLowerCase();\nreturn [{ json: { mode: \"text\", source: \"text\", query: dish, user_ingredients: [], uncertain: [],\n  max_minutes: maxMin, vegetarian: veg } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        192
+      ],
+      "id": "f433f3ba-2b82-4e56-968c-4745f5d5c899",
+      "name": "Normalize text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.query }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1888,
+        0
+      ],
+      "id": "12b31d9a-283d-48f6-b3d8-c219239ce494",
+      "name": "Has query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"bge-m3\", input: $json.query }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2112,
+        -48
+      ],
+      "id": "5ed172d7-7c4a-4e34-8b4b-7272c26654eb",
+      "name": "Embed query",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/recipes_rich/points/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ vector: $json.embeddings[0], limit: $('Has query').first().json.mode === \"ingredients\" ? 40 : 5, with_payload: true, filter: ($('Has query').first().json.max_minutes || $('Has query').first().json.vegetarian) ? { must: [].concat($('Has query').first().json.max_minutes ? [{ key: \"minutes\", range: { lte: $('Has query').first().json.max_minutes } }] : [], $('Has query').first().json.vegetarian ? [{ key: \"tags\", match: { value: \"vegetarian\" } }] : []) } : undefined }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2352,
+        -48
+      ],
+      "id": "72a02d5c-a079-44cd-b46d-cf4623876a8b",
+      "name": "RAG search",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.result.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2592,
+        -48
+      ],
+      "id": "901379fa-7e09-4b51-89ba-a56b4a0c12e3",
+      "name": "Has results"
+    },
+    {
+      "parameters": {
+        "jsCode": "const n = $('Has query').first().json;\nconst hits = ($json.result || []).filter(h => h.payload && Array.isArray(h.payload.ingredients));\n\nconst STAPLES = [\"salt\", \"pepper\", \"black pepper\", \"white pepper\", \"water\", \"hot water\", \"warm water\",\n  \"cold water\", \"boiling water\", \"oil\", \"vegetable oil\", \"olive oil\", \"cooking oil\", \"cooking spray\",\n  \"sugar\", \"ice\", \"ice cubes\", \"kosher salt\", \"sea salt\", \"salt and pepper\"];\nconst stem = w => {\n  if (w.length <= 3) return w;\n  if (w.endsWith(\"ies\")) return w.slice(0, -3) + \"y\";\n  if (w.endsWith(\"oes\")) return w.slice(0, -2);\n  if (w.endsWith(\"ss\")) return w;\n  if (w.endsWith(\"s\")) return w.slice(0, -1);\n  return w;\n};\nconst toks = s => String(s).toLowerCase().replace(/[^a-z\\s]/g, \" \").split(/\\s+/).filter(Boolean).map(stem);\nconst STAPLE_KEYS = new Set(STAPLES.map(s => toks(s).join(\" \")));\nconst isStaple = r => STAPLE_KEYS.has(toks(r).join(\" \"));\n\nconst user = (n.user_ingredients || []).map(u => toks(u)).filter(t => t.length);\nconst matches = (r, u) => {\n  const R = toks(r);\n  return u.every(t => R.includes(t)) || R.every(t => u.includes(t));\n};\nconst analyse = h => {\n  const pantry = [], needed = [];\n  h.payload.ingredients.forEach(r => (isStaple(r) ? pantry : needed).push(r));\n  const have = needed.filter(r => user.some(u => matches(r, u)));\n  const missing = needed.filter(r => !user.some(u => matches(r, u)));\n  const usedUser = user.filter(u => needed.some(r => matches(r, u))).length;\n  return { h, pantry, needed, have, missing, usedUser };\n};\nconst pack = a => ({\n  name: a.h.payload.name, minutes: a.h.payload.minutes, steps: a.h.payload.steps || [],\n  pantry: a.pantry, needed: a.needed, have: a.have, missing: a.missing, score: a.h.score\n});\n\nlet ranked = [];\nif (n.mode === \"ingredients\" && user.length) {\n  const all = hits.map(analyse);\n  const minUsed = Math.min(2, user.length);\n  let pool = all.filter(a => a.usedUser >= minUsed && a.needed.length >= 3);\n  if (!pool.length) pool = all.filter(a => a.usedUser >= 1);\n  if (!pool.length) pool = all;\n  ranked = pool.sort((a, b) => (a.missing.length - b.missing.length)\n    || (b.usedUser - a.usedUser) || ((b.h.score || 0) - (a.h.score || 0)));\n} else {\n  const qt = [...new Set(toks(n.query).filter(t => t.length > 2))];\n  const nameScore = a => qt.length ? qt.filter(t => toks(a.h.payload.name).includes(t)).length / qt.length : 0;\n  ranked = hits.map(analyse).sort((a, b) => (nameScore(b) - nameScore(a)) || ((b.h.score || 0) - (a.h.score || 0)));\n  ranked.forEach(a => { a.have = []; a.missing = []; });\n}\nconst chosen = ranked.length ? pack(ranked[0]) : null;\nconst alternatives = ranked.slice(1, 3).map(a => ({ name: a.h.payload.name, missing: a.missing.length, minutes: a.h.payload.minutes }));\nreturn [{ json: {\n  mode: n.mode, source: n.source || \"\", query: n.query,\n  user_ingredients: n.user_ingredients || [], uncertain: n.uncertain || [],\n  chosen, alternatives, retrieved: hits.length\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2832,
+        -48
+      ],
+      "id": "b671c62e-ef50-44e6-b012-1229bdab9a67",
+      "name": "Rank recipes"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You are a home chef assistant. You receive a recipe, the ingredients the user has and the ingredients the user is missing. Return ONLY JSON: {\\\"intro\\\": string, \\\"substitutions\\\": [{\\\"missing\\\": string, \\\"replace_with\\\": string}], \\\"tip\\\": string}. intro = one friendly sentence describing the dish, at most 25 words. substitutions = at most 3 items; \\\"missing\\\" must be copied exactly from the Missing list and \\\"replace_with\\\" must be a common substitute, preferably an ingredient the user has; use an empty array when Missing is NONE. tip = one practical cooking tip, at most 20 words. Never add recipe steps or ingredients. Example: {\\\"intro\\\": \\\"A creamy baked pasta with chicken and mushrooms.\\\", \\\"substitutions\\\": [{\\\"missing\\\": \\\"heavy cream\\\", \\\"replace_with\\\": \\\"milk with a little butter\\\"}], \\\"tip\\\": \\\"Let the sauce thicken before adding the pasta.\\\"}\" }, { role: \"user\", content: \"Recipe: \" + (($json.chosen || {}).name || \"\") + \"\\nRecipe ingredients: \" + ((($json.chosen || {}).needed || []).concat(($json.chosen || {}).pantry || [])).join(\", \") + \"\\nUser has: \" + ($json.user_ingredients.length ? $json.user_ingredients.join(\", \") : \"NONE\") + \"\\nMissing: \" + ((($json.chosen || {}).missing || []).length ? $json.chosen.missing.join(\", \") : \"NONE\") } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3072,
+        -48
+      ],
+      "id": "585af75b-af5d-44c2-b9ab-4b3b78412a70",
+      "name": "Chef",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"qwen2.5:3b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You check ingredient substitutions for a cooking assistant. The input is a JSON list of {missing, replace_with}. For each item decide whether replace_with is a sensible edible substitute for missing in a recipe. Return ONLY JSON: {\\\"verdicts\\\": [boolean, ...]} with exactly one boolean per item, in the same order. Return an empty list if the input is empty.\" }, { role: \"user\", content: JSON.stringify($json.chef.substitutions) } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3552,
+        -48
+      ],
+      "id": "9f95acff-e771-4410-983f-68246ca7a973",
+      "name": "Validator",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $('Rank recipes').first().json;\nconst chef = $('Parse chef').first().json.chef;\nlet verdicts = [];\ntry { verdicts = JSON.parse($json.message.content).verdicts || []; } catch (e) {}\nlet subs = chef.substitutions;\nif (Array.isArray(verdicts) && verdicts.length === subs.length) subs = subs.filter((s, i) => verdicts[i] !== false);\n\nconst c = r.chosen;\nif (!c) return [{ json: { answer: \"I could not find a matching recipe in the knowledge base. Try other ingredients or a different dish name.\" } }];\nconst cap = s => { s = String(s).trim(); return s.charAt(0).toUpperCase() + s.slice(1); };\n\nconst head = [cap(c.name) + \" (\" + c.minutes + \" min)\"];\nif (chef.intro) head.push(chef.intro);\nhead.push(\"\");\nif (r.mode === \"ingredients\") {\n  head.push((r.source === \"photo\" ? \"Detected in your photo: \" : \"Your ingredients: \") + r.user_ingredients.join(\", \"));\n  if (r.uncertain.length) head.push(\"Not sure about (ignored): \" + [...new Set(r.uncertain)].join(\", \"));\n  head.push(\"\");\n  head.push(\"You have (\" + c.have.length + \" of \" + c.needed.length + \"): \" + (c.have.join(\", \") || \"-\"));\n  head.push(c.missing.length ? \"Missing (\" + c.missing.length + \"): \" + c.missing.join(\", \") : \"You have everything you need!\");\n  if (c.pantry.length) head.push(\"Pantry basics: \" + c.pantry.join(\", \"));\n  if (subs.length) { head.push(\"\"); head.push(\"Substitutions:\"); subs.forEach(s => head.push(\"- \" + s.missing + \" -> \" + s.replace_with)); }\n} else {\n  head.push(\"Ingredients needed: \" + c.needed.concat(c.pantry).join(\", \"));\n}\nhead.push(\"\");\nconst foot = [];\nif (r.mode === \"ingredients\" && r.alternatives.length) {\n  foot.push(\"\");\n  foot.push(\"Other close options: \" + r.alternatives.map(a => cap(a.name) + \" (missing \" + a.missing + \")\").join(\"; \"));\n}\nif (chef.tip) { foot.push(\"\"); foot.push(\"Tip: \" + chef.tip); }\nconst steps = (c.steps || []).slice(0, 12).map((s, i) => (i + 1) + \". \" + cap(s));\nconst build = () => head.concat([\"Steps:\"], steps, foot).join(\"\\n\");\nlet out = build();\nwhile (out.length > 3900 && steps.length > 3) { steps.pop(); out = build(); }\nout = out.replace(/[*_`\\[\\]]/g, \"\");\nif (out.length > 4000) out = out.slice(0, 3990) + \"...\";\nreturn [{ json: { answer: out, mode: r.mode, chosen: c.name, missing: c.missing.length, rule_substitutions_kept: subs.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3792,
+        -48
+      ],
+      "id": "aa8e3d26-00ee-41be-81e2-733792dd9bf6",
+      "name": "Final answer"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ba74eb1e-4810-4ab7-8c7f-1888845a5462",
+      "name": "Telegram Trigger",
+      "webhookId": "0b29af56-85b8-4007-a136-340daedfabb9",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Analyzing your request, najmou nabtou , stana chway...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        -192
+      ],
+      "id": "36f8761c-93ec-4cd5-9889-716e17fc7304",
+      "name": "Send a text message",
+      "webhookId": "511b7ba4-ecd1-4dff-93dc-5b1b9342880e",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "destinationKey": "b64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -240
+      ],
+      "id": "c177ec59-ade5-41a4-a367-26c6d1caa5bf",
+      "name": "Image to base64"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[$json.message.photo.length - 1].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -112
+      ],
+      "id": "3d459fc5-1ca9-47af-a7b2-8677529fae5d",
+      "name": "Get a file",
+      "webhookId": "94256879-6298-4872-a1b9-09b9e93b94f0",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $json.answer }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4032,
+        -48
+      ],
+      "id": "6d640207-4949-4661-ad28-656c29c2f404",
+      "name": "Send a text message1",
+      "webhookId": "89be299b-437e-4030-abe7-972fc431ee75",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "I could not detect any ingredients or request. Send a photo of your ingredients, a photo of a dish, a screenshot of a recipe, or type what you want to cook (for example: I have chicken, rice and onion).",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2112,
+        176
+      ],
+      "id": "6ca2d8c4-b61e-43a9-b6d4-07868e5b77be",
+      "name": "Send a text message2",
+      "webhookId": "6d1399c2-02fc-41d2-aab0-a7ea31da4760",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "No matching recipe was found in the knowledge base. Try other ingredients, a different dish name or a longer time limit.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2832,
+        176
+      ],
+      "id": "a2ecf0a8-fbfb-4ce0-8272-dc902ec04c93",
+      "name": "Send a text message3",
+      "webhookId": "beb6617e-35e9-4c63-b555-ec6067630d35",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"qwen2.5:3b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You analyse a message sent to a recipe assistant. Return ONLY JSON: {\\\"intent\\\": \\\"ingredients\\\" | \\\"dish\\\", \\\"items\\\": [string], \\\"dish\\\": string, \\\"max_minutes\\\": number or null, \\\"vegetarian\\\": boolean}. intent is ingredients when the user lists food items they have or want to use; otherwise intent is dish and dish holds the name of the dish or a short description of what they want to cook. items = the ingredients as singular English food names (empty array when intent is dish). max_minutes = a number only if the user gives a time limit, else null. vegetarian = true only if the user asks for vegetarian food. Always translate to English (the user may write in French, Arabic or Tunisian dialect). Examples: 'I have eggs, tomatoes and cheese' -> {\\\"intent\\\":\\\"ingredients\\\",\\\"items\\\":[\\\"egg\\\",\\\"tomato\\\",\\\"cheese\\\"],\\\"dish\\\":\\\"\\\",\\\"max_minutes\\\":null,\\\"vegetarian\\\":false}. 'quick vegetarian lasagna under 40 minutes' -> {\\\"intent\\\":\\\"dish\\\",\\\"items\\\":[],\\\"dish\\\":\\\"lasagna\\\",\\\"max_minutes\\\":40,\\\"vegetarian\\\":true}.\" }, { role: \"user\", content: ($('Telegram Trigger').first().json.message.text || \"\") } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        736,
+        192
+      ],
+      "id": "da7ad774-51d5-418e-b85e-99ffa4ccf4de",
+      "name": "Text intent",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "document",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        -240
+      ],
+      "id": "545aa266-587b-4c02-bad5-b52c09bf9797",
+      "name": "Is document"
+    },
+    {
+      "parameters": {
+        "jsCode": "const p = $json.parsed;\nconst cap = s => { s = String(s).trim(); return s.charAt(0).toUpperCase() + s.slice(1); };\nconst head = [p.title ? cap(p.title) : \"Recipe from your document\"];\nif (p.servings) head.push(\"Servings: \" + p.servings);\nif (p.time) head.push(\"Time: \" + p.time + (/^\\d+$/.test(String(p.time)) ? \" min\" : \"\"));\nhead.push(\"\");\nhead.push(\"Ingredients needed:\");\n(p.ingredients.length ? p.ingredients : [\"(none detected)\"]).forEach(i => head.push(\"- \" + i));\nhead.push(\"\");\nconst steps = p.steps.slice(0, 20).map((s, i) => (i + 1) + \". \" + cap(s));\nconst build = () => head.concat([\"Steps:\"], steps.length ? steps : [\"(none detected)\"]).join(\"\\n\");\nlet out = build();\nwhile (out.length > 3900 && steps.length > 3) { steps.pop(); out = build(); }\nout = out.replace(/[*_`\\[\\]]/g, \"\");\nif (out.length > 4000) out = out.slice(0, 3990) + \"...\";\nreturn [{ json: { answer: out, mode: \"document\" } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        -240
+      ],
+      "id": "7cb0f744-4b73-4dc4-a6df-3148039b2b88",
+      "name": "Document answer"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $('Rank recipes').first().json;\nconst c = r.chosen || { missing: [] };\nlet o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nconst strip = s => String(s || \"\").replace(/[*_`#\\[\\]]/g, \"\").trim();\nconst missingSet = (c.missing || []).map(m => m.toLowerCase().trim());\nconst subs = (Array.isArray(o.substitutions) ? o.substitutions : [])\n  .filter(s => s && s.missing && s.replace_with && missingSet.includes(String(s.missing).toLowerCase().trim()))\n  .slice(0, 3)\n  .map(s => ({ missing: strip(s.missing), replace_with: strip(s.replace_with) }));\nreturn [{ json: { chef: { intro: strip(o.intro).slice(0, 220), tip: strip(o.tip).slice(0, 200), substitutions: subs } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        -48
+      ],
+      "id": "e1295c7d-7595-4958-901d-86827882d455",
+      "name": "Parse chef"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input Type": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text intent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Parse router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse router": {
+      "main": [
+        [
+          {
+            "node": "Route by type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by type": {
+      "main": [
+        [
+          {
+            "node": "Vision ingredients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vision dish",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recipe parser",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vision ingredients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vision ingredients": {
+      "main": [
+        [
+          {
+            "node": "Normalize 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vision dish": {
+      "main": [
+        [
+          {
+            "node": "Normalize 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recipe parser": {
+      "main": [
+        [
+          {
+            "node": "Normalize 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize 1": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize 2": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize 3": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize text": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has query": {
+      "main": [
+        [
+          {
+            "node": "Is document",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed query": {
+      "main": [
+        [
+          {
+            "node": "RAG search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG search": {
+      "main": [
+        [
+          {
+            "node": "Has results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has results": {
+      "main": [
+        [
+          {
+            "node": "Rank recipes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chef": {
+      "main": [
+        [
+          {
+            "node": "Parse chef",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validator": {
+      "main": [
+        [
+          {
+            "node": "Final answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final answer": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Input Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Image to base64": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Image to base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text intent": {
+      "main": [
+        [
+          {
+            "node": "Normalize text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is document": {
+      "main": [
+        [
+          {
+            "node": "Document answer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Embed query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document answer": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank recipes": {
+      "main": [
+        [
+          {
+            "node": "Chef",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse chef": {
+      "main": [
+        [
+          {
+            "node": "Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "cbcfa077-eebc-4852-a4c1-038cc79c4034",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "714c17c71464670714213d68b83d1099d56de85fd66e2943c0433f6810e46841"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
