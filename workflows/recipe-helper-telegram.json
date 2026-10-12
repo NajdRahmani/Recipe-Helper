@@ -1,0 +1,960 @@
+{
+  "name": "recipe-helper-telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.photo ? \"image\" : \"text\" }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "196b9e16-3425-4c38-9fbe-ba71261adef7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bece5f31-8a25-4b9d-bae7-0bd93b04d528",
+                    "leftValue": "={{ $json.message.photo ? \"image\" : \"text\" }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "5fcfe46d-4ff8-4171-93ca-a55056f41f7d",
+      "name": "Input Type"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You classify input for a recipe assistant. Return ONLY JSON: {\\\"type\\\": \\\"ingredients_photo\\\" | \\\"dish_photo\\\" | \\\"recipe_document\\\", \\\"confidence\\\": number between 0 and 1}. ingredients_photo = raw food items (fridge, counter, shelf, groceries). dish_photo = a cooked or plated dish. recipe_document = a page or screenshot containing written recipe text.\" }, { role: \"user\", content: \"Classify this image.\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        -144
+      ],
+      "id": "d78513b7-2ca2-412c-b993-ad6fbe693ee0",
+      "name": "Router",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = { type: \"ingredients_photo\", confidence: 0 };\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nreturn [{ json: o }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -144
+      ],
+      "id": "3ee3e717-9448-4815-8179-81d5f28dbc5f",
+      "name": "Parse router"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "ingredients_photo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ingredients"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "dish_photo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "dish"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "recipe_document",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "document"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1136,
+        -352
+      ],
+      "id": "6d6b09d1-6fcc-4a5a-a414-6e7a5b287bce",
+      "name": "Route by type"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"You identify food ingredients in a photo. Return ONLY JSON: {\\\"ingredients\\\": [{\\\"name\\\": string, \\\"confidence\\\": number}], \\\"uncertain\\\": [string]}. List only clearly visible items.\" }, { role: \"user\", content: \"List the ingredients.\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        -224
+      ],
+      "id": "b3810b40-f10b-419f-83a3-5357a30a308b",
+      "name": "Vision ingredients",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"Identify the cooked dish. Return ONLY JSON: {\\\"dish\\\": string, \\\"likely_ingredients\\\": [string]}.\" }, { role: \"user\", content: \"What dish is this?\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        -80
+      ],
+      "id": "05199abd-30d1-478d-bfeb-8e0e44ee5e82",
+      "name": "Vision dish",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"gemma3:4b\", stream: false, format: \"json\", messages: [ { role: \"system\", content: \"Extract only the written recipe. Return ONLY JSON with title, servings, time_minutes, ingredients, and steps. Never invent missing quantities or steps.\" }, { role: \"user\", content: \"Extract the recipe.\", images: [ $('Image to base64').first().json.b64 ] } ] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1392,
+        64
+      ],
+      "id": "f7101b21-c74e-467e-a89b-144592f60a4c",
+      "name": "Recipe parser",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nlet ing = [], query = \"\";\nif (Array.isArray(o.ingredients) && o.ingredients.length && o.ingredients[0].name !== undefined) {\n  ing = o.ingredients.filter(i => i.confidence >= 0.6).map(i => i.name);\n  query = ing.length ? \"recipe using \" + ing.join(\", \") : \"\";\n} else if (o.dish) {\n  ing = o.likely_ingredients || [];\n  query = o.dish + \" recipe\";\n} else if (o.title) {\n  ing = (o.ingredients || []).map(i => i.item);\n  query = o.title + \" \" + ing.join(\", \");\n}\nreturn [{ json: { query, user_ingredients: ing } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -224
+      ],
+      "id": "c42958f1-9bd9-4de6-9593-9ed787080298",
+      "name": "Normalize 1"
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nlet ing = [], query = \"\";\nif (Array.isArray(o.ingredients) && o.ingredients.length && o.ingredients[0].name !== undefined) {\n  ing = o.ingredients.filter(i => i.confidence >= 0.6).map(i => i.name);\n  query = ing.length ? \"recipe using \" + ing.join(\", \") : \"\";\n} else if (o.dish) {\n  ing = o.likely_ingredients || [];\n  query = o.dish + \" recipe\";\n} else if (o.title) {\n  ing = (o.ingredients || []).map(i => i.item);\n  query = o.title + \" \" + ing.join(\", \");\n}\nreturn [{ json: { query, user_ingredients: ing } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -80
+      ],
+      "id": "5be6d316-a920-402a-bebb-2163b8ac02b8",
+      "name": "Normalize 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "let o = {};\ntry { o = JSON.parse($json.message.content); } catch (e) {}\nlet ing = [], query = \"\";\nif (Array.isArray(o.ingredients) && o.ingredients.length && o.ingredients[0].name !== undefined) {\n  ing = o.ingredients.filter(i => i.confidence >= 0.6).map(i => i.name);\n  query = ing.length ? \"recipe using \" + ing.join(\", \") : \"\";\n} else if (o.dish) {\n  ing = o.likely_ingredients || [];\n  query = o.dish + \" recipe\";\n} else if (o.title) {\n  ing = (o.ingredients || []).map(i => i.item);\n  query = o.title + \" \" + ing.join(\", \");\n}\nreturn [{ json: { query, user_ingredients: ing } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        64
+      ],
+      "id": "96578a1b-9739-4dbe-96a6-a3087af1f853",
+      "name": "Normalize 3"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { query: $('Telegram Trigger').first().json.message.text || \"\", user_ingredients: [] } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        192
+      ],
+      "id": "f433f3ba-2b82-4e56-968c-4745f5d5c899",
+      "name": "Normalize text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.query }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1888,
+        0
+      ],
+      "id": "12b31d9a-283d-48f6-b3d8-c219239ce494",
+      "name": "Has query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: \"bge-m3\", input: $json.query }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2112,
+        -48
+      ],
+      "id": "5ed172d7-7c4a-4e34-8b4b-7272c26654eb",
+      "name": "Embed query",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/recipes_fixed/points/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ vector: $json.embeddings[0], limit: 5, with_payload: true }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2352,
+        -48
+      ],
+      "id": "72a02d5c-a079-44cd-b46d-cf4623876a8b",
+      "name": "RAG search",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.result.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2592,
+        -48
+      ],
+      "id": "901379fa-7e09-4b51-89ba-a56b4a0c12e3",
+      "name": "Has results"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $json.result.slice(0, 3).map(h => h.payload.text).join(\"\\n\\n---\\n\\n\");const n = $('Has query').first().json;\nreturn [{ json: { context: ctx, query: n.query, user_ingredients: n.user_ingredients } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2832,
+        -48
+      ],
+      "id": "b671c62e-ef50-44e6-b012-1229bdab9a67",
+      "name": "Build context"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gemma3:4b\",\n  stream: false,\n  messages: [\n    { role: \"system\", content: \"You are a helpful home chef. You receive the user's request, the ingredients the user has (possibly none) and candidate recipes from a database. Choose exactly ONE recipe, the best match for the user's ingredients, and never mention the other candidates. Answer in plain text with no markdown symbols, in this order: 1) Recipe title and time. 2) HAVE: user ingredients that are used in the chosen recipe. 3) MISSING: ingredients of the chosen recipe that the user does not have (maximum 8, skip salt and water). 4) Up to 3 substitutions for missing items. 5) Numbered steps (maximum 8). If the user ingredients are NONE PROVIDED, skip HAVE, MISSING and substitutions, and do not assume the user owns anything. Be concise.\" },\n    { role: \"user\", content: \"User request: \" + $json.query + \"\\nUser ingredients: \" + ($json.user_ingredients.length ? $json.user_ingredients.join(\", \") : \"NONE PROVIDED\") + \"\\n\\nCandidate recipes:\\n\" + $json.context + \"\\n\\nAnswer now. Do not repeat these instructions.\" }\n  ]\n}) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3072,
+        -48
+      ],
+      "id": "585af75b-af5d-44c2-b9ab-4b3b78412a70",
+      "name": "Chef",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"qwen2.5:3b\",\n  stream: false,\n  format: \"json\",\n  messages: [\n    { role: \"system\", content: \"You check grounding. Return ONLY JSON: {\\\"grounded\\\": boolean}. grounded is true if the recipe in the answer appears in the provided context, and false if the answer describes a recipe that is not in the context.\" },\n    { role: \"user\", content: \"Context:\\n\" + $('Build context').first().json.context + \"\\n\\nAnswer:\\n\" + $json.message.content }\n  ]\n}) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3312,
+        -48
+      ],
+      "id": "9f95acff-e771-4410-983f-68246ca7a973",
+      "name": "Validator",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "const chef0 = $('Chef').first().json.message.content;\nconst ctx = $('Build context').first().json;\nlet llmGrounded = null;\ntry { llmGrounded = JSON.parse($json.message.content).grounded; } catch (e) {}\nconst norm = s => s.replace(/[’‘´`]/g, \"'\").replace(/[*_#]/g, \"\").toLowerCase();\n\n// 1) drop any echoed instructions\nlet body = chef0.split(/\\n\\s*\\n/)\n  .filter(p => !/you are a helpful home chef|candidate recipes from a database|never mention the other candidates/i.test(p))\n  .join(\"\\n\\n\").trim();\n\n// 2) no user ingredients: remove HAVE / MISSING / SUBSTITUTION lines\nif (!ctx.user_ingredients.length) {\n  body = body.split(\"\\n\")\n    .filter(l => !/^\\s*(HAVE|MISSING|SUBSTITUTION)/i.test(l.replace(/[*_`#]/g, \"\")))\n    .join(\"\\n\").replace(/\\n{3,}/g, \"\\n\\n\");\n}\n\n// 3) rule-based checks\nconst firstLine = body.split(\"\\n\").find(l => l.trim()) || \"\";\nconst title = norm(firstLine).split(/\\s[-–—]\\s/)[0].replace(/^(recipe|title)\\s*:\\s*/i, \"\").trim();\nconst inContext = title.length > 2 && norm(ctx.context).includes(title);\nconst issues = [];\nif ((body.match(/^\\s*\\d+\\./gm) || []).length < 3) issues.push(\"fewer than 3 numbered steps\");\nif (!inContext) issues.push(\"recipe title not found in retrieved recipes\");\nconst note = issues.length ? \"\\n\\nChecks: \" + issues.join(\"; \") : \"\";\n\nlet full = (body + note).replace(/[*_`\\[\\]]/g, \"\");\nif (full.length > 4000) full = full.slice(0, 3990) + \"...\";\nreturn [{ json: { answer: full, llm_grounded: llmGrounded, rule_issues: issues } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3552,
+        -48
+      ],
+      "id": "aa8e3d26-00ee-41be-81e2-733792dd9bf6",
+      "name": "Final answer"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ba74eb1e-4810-4ab7-8c7f-1888845a5462",
+      "name": "Telegram Trigger",
+      "webhookId": "0b29af56-85b8-4007-a136-340daedfabb9",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Analyzing your request, najmou nabtou , stana chway...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        -192
+      ],
+      "id": "36f8761c-93ec-4cd5-9889-716e17fc7304",
+      "name": "Send a text message",
+      "webhookId": "511b7ba4-ecd1-4dff-93dc-5b1b9342880e",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "destinationKey": "b64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -240
+      ],
+      "id": "c177ec59-ade5-41a4-a367-26c6d1caa5bf",
+      "name": "Image to base64"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[$json.message.photo.length - 1].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -112
+      ],
+      "id": "3d459fc5-1ca9-47af-a7b2-8677529fae5d",
+      "name": "Get a file",
+      "webhookId": "94256879-6298-4872-a1b9-09b9e93b94f0",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $json.answer }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3760,
+        -48
+      ],
+      "id": "6d640207-4949-4661-ad28-656c29c2f404",
+      "name": "Send a text message1",
+      "webhookId": "89be299b-437e-4030-abe7-972fc431ee75",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "=I could not detect any ingredients. Please send a clearer photo or type your request .",
+        "additionalFields": {
+          "appendAttribution": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2112,
+        176
+      ],
+      "id": "6ca2d8c4-b61e-43a9-b6d4-07868e5b77be",
+      "name": "Send a text message2",
+      "webhookId": "6d1399c2-02fc-41d2-aab0-a7ea31da4760",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "No matching recipe was found in the knowledge base.",
+        "additionalFields": {
+          "appendAttribution": true
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2848,
+        176
+      ],
+      "id": "a2ecf0a8-fbfb-4ce0-8272-dc902ec04c93",
+      "name": "Send a text message3",
+      "webhookId": "beb6617e-35e9-4c63-b555-ec6067630d35",
+      "credentials": {
+        "telegramApi": {
+          "id": "NErL6xp1jVjWIwmJ",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Input Type": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalize text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Router": {
+      "main": [
+        [
+          {
+            "node": "Parse router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse router": {
+      "main": [
+        [
+          {
+            "node": "Route by type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by type": {
+      "main": [
+        [
+          {
+            "node": "Vision ingredients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vision dish",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recipe parser",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vision ingredients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vision ingredients": {
+      "main": [
+        [
+          {
+            "node": "Normalize 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vision dish": {
+      "main": [
+        [
+          {
+            "node": "Normalize 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recipe parser": {
+      "main": [
+        [
+          {
+            "node": "Normalize 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize 1": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize 2": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize 3": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize text": {
+      "main": [
+        [
+          {
+            "node": "Has query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has query": {
+      "main": [
+        [
+          {
+            "node": "Embed query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed query": {
+      "main": [
+        [
+          {
+            "node": "RAG search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG search": {
+      "main": [
+        [
+          {
+            "node": "Has results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has results": {
+      "main": [
+        [
+          {
+            "node": "Build context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build context": {
+      "main": [
+        [
+          {
+            "node": "Chef",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chef": {
+      "main": [
+        [
+          {
+            "node": "Validator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validator": {
+      "main": [
+        [
+          {
+            "node": "Final answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final answer": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Input Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Image to base64": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Image to base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "9502003a-b68f-4f44-ae56-b0d628b4805d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "714c17c71464670714213d68b83d1099d56de85fd66e2943c0433f6810e46841"
+  },
+  "nodeGroups": [],
+  "id": "9C13DABVY6G3m7X8",
+  "tags": []
+}

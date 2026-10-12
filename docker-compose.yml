@@ -4,6 +4,7 @@ services:
     ports: ["5678:5678"]
     environment:
       - N8N_SECURE_COOKIE=false
+      - WEBHOOK_URL=${WEBHOOK_URL}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes: ["n8n_data:/home/node/.n8n"]

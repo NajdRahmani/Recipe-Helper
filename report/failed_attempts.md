@@ -3,3 +3,7 @@ Initial image-run document failures were caused by a test-harness normalization 
 The first imported full n8n workflow used HTTP Request type version 2 for generated nodes. n8n stripped their method/body fields during import, so they appeared as GET and failed after Route by type. The generator now uses HTTP Request type version 4.5, and the live export confirms all eight requests are POST.
 After re-importing version 4.5 nodes, the n8n Form Trigger text smoke test (`chicken pasta`) returned execution status `success`.
 The next import exposed a second UI-only issue: n8n requires the JSON Body expression to start with `={{`, not `{{`. The generator now normalizes all HTTP bodies to `={{ JSON.stringify(...) }}`, and the live export confirms the corrected expression on every HTTP node. The Form Trigger test listener must be started again after each workflow re-import.
+Chef v1 hallucinated a HAVE list when the user gave no ingredients (text query 'Pizza'); validator v1 over-flagged MISSING items. Fixed in v2 prompts.
+Validator v2 (qwen2.5:3b) gave false warnings (miscounted steps, wrong HAVE-list claim). Fixed in v3 by moving countable checks to code and keeping only a grounding check for the LLM.
+Chef v2 merged several retrieved recipes into one answer (mixed MISSING list, over-long message). Fixed in v3 with a single-recipe instruction, output caps and top-3 context.
+Chef echoed its system prompt (gemma3:4b with system role). Dish photo guessed ingredients were wrongly treated as user-owned. Fixed with code-level cleanup and Normalize 2 change.
