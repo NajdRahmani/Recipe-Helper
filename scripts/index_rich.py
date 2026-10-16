@@ -1,5 +1,7 @@
 """Index one chunk per recipe (name + ingredients) with the full recipe in the payload.
-Usage: python scripts/index_rich.py [N_RECIPES]   (default 6000)"""
+Usage: python scripts/index_rich.py [N_RECIPES] [COLLECTION]
+   default: 6000 recipes into "recipes_rich". The project used: python scripts/index_rich.py 60000
+   like-for-like chunking test: python scripts/index_rich.py 2000 recipes_rich_2k"""
 import ast, sys
 import pandas as pd
 import ollama
@@ -7,7 +9,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct, PayloadSchemaType
 
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 6000
-COLLECTION = "recipes_rich"
+COLLECTION = sys.argv[2] if len(sys.argv) > 2 else "recipes_rich"
 BATCH = 32
 
 df = pd.read_csv("data/RAW_recipes.csv").dropna(subset=["name"]).head(N)

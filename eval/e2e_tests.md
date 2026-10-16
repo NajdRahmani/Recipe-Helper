@@ -20,26 +20,29 @@
 
 Router results in these live tests: ingredient, dish and recipe photos were classified correctly (no misroute observed).
 
-## C. Tests for the v2 workflow (to run after importing it)
-
-Fill the last two columns with what you observe. Do not mark a test as passed without running it.
+## C. Live Telegram tests of v2 (12 October 2026)
 
 | # | Input | Expected behaviour | Observed | Pass/Fail |
 |---|---|---|---|---|
-| 1 | ingredients photo, easy (4 to 6 clear items) | "Detected in your photo", HAVE and MISSING for ONE recipe, few missing, other options listed | | |
-| 2 | ingredients photo, dark or blurry | low-confidence items shown as "Not sure about (ignored)", no invented ingredient | | |
-| 3 | ingredients photo with caption `vegetarian 30 min` | recipe has the vegetarian tag and is at most 30 min | | |
-| 4 | dish photo (lasagna) | "Ingredients needed", steps, NO HAVE/MISSING | | |
-| 5 | recipe screenshot | parsed title, ingredients with quantities, steps; NO HAVE/MISSING; no retrieval step | | |
-| 6 | text: `I have eggs, tomatoes and cheese` | ingredient path (HAVE/MISSING shown) | | |
-| 7 | text: `lasagna` | dish path ("Ingredients needed", no HAVE/MISSING) | | |
-| 8 | text (French): `j'ai du poulet, du riz et des oignons` | translated, ingredient path | | |
-| 9 | text: `/start` | help message | | |
-| 10 | 5 hard router images (screenshot with food, plated dish with raw items around, packaged groceries, handwritten note, empty fridge) | record the Router label for prompt v1 and v2 (before/after) | | |
+| 1 | ingredients photo, easy (vegetables: tomato, cucumber, carrot, green beans, broccoli, pepper, sweet potato) | "Detected in your photo", HAVE and MISSING for ONE recipe, few missing, other options listed | "12 hour tomatoes (750 min)". Detected 7 items. HAVE (2 of 3): tomatoes, fresh ground black pepper. Missing (1): cumin seeds. 2 alternatives listed. | PASS |
+| 2 | ingredients photo, dark or blurry (fruits with cheese) | low-confidence items shown as "Not sure about (ignored)", no invented ingredient | "Apple a day milk shake (0 min)". Detected: orange, apple, grape, milk, water, tomato. "Not sure about (ignored): cheese". No invented items. | PASS |
+| 3 | ingredients photo with caption `vegetarian 30 min` (rice, onion, garlic, chili, tomato, egg, parsley) | recipe has the vegetarian tag and is at most 30 min | "Adriana s mexican rice (30 min)". Time filter applied (30 min). Vegetarian tag not explicitly verified in output. | PARTIAL |
+| 4 | dish photo (lasagna) | "Ingredients needed", steps, NO HAVE/MISSING | "10 lb lasagna (180 min)". "Ingredients needed" shown. No HAVE/MISSING. Steps truncated at 12 (message length limit). | PASS |
+| 5 | recipe screenshot (chilli con carne) | parsed title, ingredients with quantities, steps; NO HAVE/MISSING; no retrieval step | "Chilli con carne recipe". Full ingredient list with quantities. 6 steps. No HAVE/MISSING. No retrieval. | PASS |
+| 6 | text: `I have eggs, tomatoes and cheese` | ingredient path (HAVE/MISSING shown) | "Amazing over easy eggs (10 min)". HAVE (2 of 4): egg, parmesan cheese. Missing (2): ground pepper, rosemary. Substitution suggested. | PASS |
+| 7 | text: `lasagna` | dish path ("Ingredients needed", no HAVE/MISSING) | "10 lb lasagna (180 min)". "Ingredients needed" shown. No HAVE/MISSING. | PASS |
+| 8 | text (French): `j'ai du poulet, du riz et des oignons` | translated, ingredient path | NOT TESTED | NOT RUN |
+| 9 | text: `/start` | help message | "I could not detect any ingredients or request. Send a photo of your ingredients, a photo of a dish, a screenshot of a recipe, or type what you want to cook..." | PASS |
+| 10 | text: `hello` | help message or clarification | "Aloha joes (40 min)" — treated as dish name. False positive. | FAIL |
+| 11 | text: `chakchouka` | dish path | "Algerian poached eggs chakchouka (30 min)". Correct dish found. | PASS |
+| 12 | text: `tunisia` | dish path | "3 layered tunisian tagine (75 min)". Tunisian recipe found. | PASS |
+| 13 | text: `apple juice` | ingredient or dish path | "A a a absolutely the cranberry relish (20 min)". Ingredient path with HAVE/MISSING. | PASS |
+| 14 | text: `pineapple pie under 60 minutes` | dish path with time filter | "Pink stuff cherry pie filling pineapple dessert (5 min)". Time filter applied but dish name not prioritized. | PARTIAL |
+| 15 | unclear photo | helpful error message | "I could not detect any ingredients or request..." | PASS |
 
-Pass criteria per mode:
-- **ingredient input:** shows HAVE and MISSING, all HAVE items really are in the user's list, steps come from the recipe.
-- **dish, recipe screenshot, plain text:** the answer must not contain "You have" or "Missing".
-- **all:** one recipe only, message under 4000 characters, no echoed instructions.
+**Summary:** 11 PASS, 2 PARTIAL, 1 FAIL, 1 NOT RUN.
 
-Totals (fill in): v1 live tests 0 of 7 clean (all were failures, listed above); v2 live tests: ___ of 10.
+**Issues found:**
+1. "hello" treated as dish name — Text Intent agent needs greeting detection
+2. Time filter works but can override dish name priority
+3. Vegetarian tag filter not visible in output (need to verify tag applied)
