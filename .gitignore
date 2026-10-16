@@ -3,3 +3,4 @@ data/RAW_recipes.csv
 .env
 eval/images/
 eval/runs/
+data/
