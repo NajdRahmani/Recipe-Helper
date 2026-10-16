@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f8f8f3" />
+  <meta name="description" content="Savour is your thoughtful AI kitchen companion. Discover meals, snacks, desserts, drinks, and cuisines from ingredients, a dish idea, or a photo." />
+  <title>Savour — Make something good.</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="site-header">
+    <div class="shell nav-bar">
+      <a class="brand" href="#home" id="homeLink" aria-label="Savour home">
+        <span class="brand-emblem" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M12 30c10-2 17-11 18-22M17 22C9 20 8 14 9 10c6 0 10 4 11 9M24 15c0-6 3-9 8-11 2 6-1 11-7 13M14 27c-7 1-10-1-12-6 6-3 12 0 14 4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span>savour<span class="brand-dot">.</span></span>
+      </a>
+      <nav class="top-nav" aria-label="Main navigation">
+        <a href="#discover" class="top-nav-link">Discover</a>
+        <button type="button" class="top-nav-link nav-btn" id="pantryNav">My pantry</button>
+        <button type="button" class="top-nav-link nav-btn" id="savedNav">Saved <span class="saved-count" id="savedCount">0</span></button>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn mobile-menu" id="mobileMenu" type="button" aria-label="Open menu" title="Menu">☰</button>
+        <button class="icon-btn" id="settingsBtn" type="button" aria-label="Connection settings" title="Connection settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.8a3.8 3.8 0 1 0 0-7.6 3.8 3.8 0 0 0 0 7.6ZM19.4 15.1l1.3 1-1.7 3-1.6-.5a8.5 8.5 0 0 1-2.4 1.4l-.3 1.7h-3.4l-.3-1.7a8.5 8.5 0 0 1-2.4-1.4l-1.6.5-1.7-3 1.3-1a8.2 8.2 0 0 1 0-2.8l-1.3-1 1.7-3 1.6.5A8.5 8.5 0 0 1 11 7.4l.3-1.7h3.4l.3 1.7a8.5 8.5 0 0 1 2.4 1.4l1.6-.5 1.7 3-1.3 1a8.2 8.2 0 0 1 0 2.8Z"/></svg></button>
+        <a href="#search" class="top-cta">Find a recipe <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero shell" id="discover" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-star">✳</span> Your kitchen, a little smarter <span class="eyebrow-line"></span> EST. TODAY</div>
+        <h1 id="heroTitle">Every ingredient<br/>has a <em>story.</em></h1>
+        <p class="hero-subtitle">A few things in the fridge? A dish on your mind? Let's turn what you've got into something really good.</p>
+        <div class="hero-scribble" aria-hidden="true">made with a little magic <span>↗</span></div>
+      </div>
+      <div class="hero-art food-universe" aria-label="Illustrations of different kinds of food, including pasta, a bowl, soup and dessert">
+        <div class="food-gallery">
+          <div class="food-tile food-tile-main"><span class="food-tile-emoji" aria-hidden="true">🍝</span><span class="food-tile-caption">COMFORT FOOD</span></div>
+          <div class="food-tile food-tile-top"><span class="food-tile-emoji" aria-hidden="true">🥗</span><span class="food-tile-caption">FRESH & EASY</span></div>
+          <div class="food-tile food-tile-left"><span class="food-tile-emoji" aria-hidden="true">🍲</span><span class="food-tile-caption">HOME COOKING</span></div>
+          <div class="food-tile food-tile-right"><span class="food-tile-emoji" aria-hidden="true">🍰</span><span class="food-tile-caption">SWEET TREATS</span></div>
+          <div class="gallery-sparkle" aria-hidden="true">✳</div>
+        </div>
+        <div class="art-sticker"><span class="art-sticker-icon">✳</span><span>every craving<br/><strong>has a recipe</strong></span></div>
+        <span class="art-caption">SWEET · SAVORY · EVERYTHING <span>↗</span></span>
+      </div>
+    </section>
+
+    <section class="search-section shell" id="search" aria-label="Find a recipe">
+      <div class="search-card">
+        <div class="search-head"><span class="search-head-dot"></span><span>THE LITTLE RECIPE STUDIO</span><span class="search-head-right">01 / START HERE</span></div>
+        <div class="search-body">
+          <label class="search-title" for="recipeQuery">What's cooking today?</label>
+          <p class="search-hint">Tell me what you have, what you're craving, or show me a photo.</p>
+          <div class="query-wrap"><textarea id="recipeQuery" rows="2" maxlength="700" placeholder="e.g. I have tomatoes, eggs and feta..." aria-label="Describe a dish or ingredients"></textarea></div>
+          <div class="upload-preview" id="uploadPreview" hidden><img id="previewImage" alt="Your uploaded food photo"/><div><strong id="imageName">Photo attached</strong><span>We'll look at it for ingredients or a recipe.</span></div><button class="icon-btn preview-remove" id="removeImage" aria-label="Remove image" type="button">×</button></div>
+          <div class="search-controls"><label class="upload-btn" for="imageFile"><span class="small-ico">↗</span> Add a photo <span class="upload-sub">JPG / PNG</span></label><input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden/><span class="control-divider"></span><button class="filter-toggle" type="button" id="filterToggle" aria-expanded="false" aria-controls="filterPanel"><span class="small-ico">☷</span> Preferences <span class="chevron" id="filterChevron">⌄</span></button><div class="search-spacer"></div><span class="keyboard-hint">⌘ / Ctrl + Enter</span><button class="search-submit" id="searchSubmit" type="button">Find my recipe <span>↗</span></button></div>
+          <div class="filter-panel" id="filterPanel" hidden><div class="filter-grid"><label>Ready in <select id="maxMinutes"><option value="">Any time</option><option value="15">15 min or less</option><option value="30">30 min or less</option><option value="45">45 min or less</option><option value="60">60 min or less</option></select></label><label>Cuisine <select id="cuisine"><option value="">Surprise me</option><option value="italian">Italian</option><option value="mediterranean">Mediterranean</option><option value="tunisian">Tunisian</option><option value="indian">Indian</option><option value="mexican">Mexican</option><option value="asian">Asian</option></select></label><label>Max kcal / serving <input type="number" id="maxKcal" inputmode="numeric" placeholder="Optional" min="0" max="5000"/></label><label>Min protein (g) <input type="number" id="minProtein" inputmode="numeric" placeholder="Optional" min="0" max="500"/></label></div><label class="check-label"><input type="checkbox" id="vegetarian"/> Vegetarian only</label></div>
+        </div>
+        <div class="search-bottom"><span>NEED A LITTLE INSPIRATION?</span><div class="suggestions"><button type="button" class="suggestion" data-query="I have eggs, tomatoes and feta">Eggs, tomatoes & feta <span>↗</span></button><button type="button" class="suggestion" data-query="easy chicken and rice">Chicken & rice <span>↗</span></button><button type="button" class="suggestion" data-query="quick vegetarian dinner">Quick veggie dinner <span>↗</span></button><button type="button" class="suggestion sample-link" id="viewDemo">See example result ↗</button></div></div>
+      </div>
+      <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+      <div id="loadingSection" class="loading-card" hidden aria-live="polite"><div class="loading-spinner" aria-hidden="true"><span>✳</span></div><div><strong>Something delicious is coming together...</strong><p>Your assistant is finding a recipe, asking the Chef, and checking the result. This can take a little while on local models.</p><div class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></div></div><button type="button" class="quiet-btn" id="cancelBtn">Cancel</button></div>
+    </section>
+
+    <section class="result-section shell" id="recipeResult" hidden aria-label="Recipe result">
+      <div class="section-top"><div class="eyebrow"><span class="eyebrow-star">✳</span> YOUR RECIPE, SERVED</div><button class="quiet-btn" id="newSearch" type="button">← Search again</button></div>
+      <div class="recipe-hero">
+        <div class="recipe-heading"><div class="result-status" id="resultStatus"><span class="status-dot"></span> Recipe preview</div><h2 id="recipeTitle">Shakshuka</h2><p id="recipeSubheading">A little something worth making.</p><div class="recipe-tags" id="recipeTags"></div><div class="recipe-actions"><button class="secondary-btn" type="button" id="saveRecipe">♡ Save recipe</button><button class="secondary-btn" type="button" id="copyRecipe">⧉ Copy</button><button class="secondary-btn" type="button" id="printRecipe">↗ Print</button></div></div>
+        <div class="recipe-image" id="recipeImage"><div class="fallback-food"><div class="food-orb orb-1"></div><div class="food-orb orb-2"></div><div class="dish-circle"><span id="fallbackEmoji" aria-hidden="true">🍲</span></div><span class="fallback-scribble">made for you ✳</span></div></div>
+      </div>
+      <div class="recipe-layout">
+        <aside class="ingredients-card"><div class="panel-heading"><div><span class="panel-kicker">01 / GET READY</span><h3>What you'll need</h3></div><span class="ingredient-progress" id="ingredientProgress">0 / 0</span></div><div id="ingredientList" class="ingredient-list"></div><div class="missing-banner" id="missingBanner" hidden></div><div class="pantry-note" id="pantryNote" hidden></div><button class="subtle-action" type="button" id="copyIngredients">↗ Copy ingredients list</button></aside>
+        <div class="method-column"><div class="method-card"><div class="panel-heading"><div><span class="panel-kicker">02 / MAKE IT HAPPEN</span><h3>Let's cook</h3></div><button type="button" id="startCooking" class="cook-toggle">Start cooking ↗</button></div><p class="method-subtitle">Take it one delicious step at a time. Tap a step when you're done.</p><div class="steps-list" id="stepsList"></div></div><div class="chef-card"><div class="chef-symbol">✳</div><div><span class="panel-kicker">A NOTE FROM YOUR AI CHEF</span><p id="chefNote"></p><div id="subsArea"></div></div></div></div>
+        <aside class="facts-column"><div class="nutrition-card"><div class="panel-kicker">03 / AT A GLANCE</div><h3>Nutrition <em>notes.</em></h3><span class="nutrition-sub">Per serving, where available</span><div class="nutrition-big" id="caloriesBlock"><span id="caloriesValue">—</span><small>kcal</small></div><div class="nutrition-rows" id="nutritionRows"></div><p class="nutri-foot">Figures come from the recipe database, not an AI estimate.</p></div><div class="trust-card"><div class="trust-symbol">✓</div><strong id="trustTitle">Made with care</strong><p id="trustDesc">Recipes are matched with your request and checked before being shown.</p><span class="trust-foot">RECIPE ASSISTANT · SAVOUR</span></div></aside>
+      </div>
+    </section>
+
+    <section class="discover-footer shell" id="howItWorks"><div class="feature-intro"><span class="eyebrow"><span class="eyebrow-star">✳</span> MORE THAN A RECIPE FINDER</span><h2>Less searching.<br/><em>More sautéing.</em></h2></div><div class="feature-grid"><div class="feature"><span class="feature-number">01</span><div class="feature-icon">◌</div><h3>Start anywhere</h3><p>A photo, three ingredients, or just a craving. There's no wrong place to begin.</p></div><div class="feature"><span class="feature-number">02</span><div class="feature-icon">✳</div><h3>A chef in your corner</h3><p>Thoughtful tips, recipe matches, and substitutions when it makes sense.</p></div><div class="feature"><span class="feature-number">03</span><div class="feature-icon">✓</div><h3>Checked twice</h3><p>The agent reviews its suggestions against the recipe before sharing them.</p></div></div></section>
+  </main>
+
+  <footer class="site-footer"><div class="shell footer-inner"><span class="footer-brand">savour<span>.</span></span><span>Make something good out of what you've got.</span><span>MADE FOR CURIOUS COOKS ✳</span></div></footer>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" hidden><div class="drawer-top"><span class="eyebrow">SAVOUR STUDIO</span><button type="button" class="icon-btn" id="closeDrawer" aria-label="Close panel">×</button></div><h2 id="drawerTitle">Your little corner.</h2><div id="drawerContent"></div></aside>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="./app.js" defer></script>
+</body>
+</html>

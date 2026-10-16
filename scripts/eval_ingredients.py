@@ -25,7 +25,7 @@ def run(holdout):
         k = max(3, round(len(needed) * 0.7))
         user = rng.sample(needed, k)
         v = ollama.embed(model="bge-m3", input=["Ingredients: " + ", ".join(user)])["embeddings"][0]
-        pts = q.query_points("recipes_rich", query=v, limit=41, with_payload=True).points
+        pts = q.query_points("recipes_v4", query=v, limit=41, with_payload=True).points
         hits = [(p.score, p.payload) for p in pts if not (holdout and p.payload["name"].strip() == name)][:40]
         if not hits:
             continue

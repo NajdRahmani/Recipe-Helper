@@ -10,3 +10,6 @@ recipes_rich_2k k=10: hit@k=1.00 MRR=0.87
 recipes_rich k=3: hit@k=0.60 MRR=0.48
 recipes_rich k=5: hit@k=0.70 MRR=0.51
 recipes_rich k=10: hit@k=0.80 MRR=0.52
+recipes_v4 k=3: hit@k=0.30 MRR=0.25
+recipes_v4 k=5: hit@k=0.40 MRR=0.27
+recipes_v4 k=10: hit@k=0.60 MRR=0.30

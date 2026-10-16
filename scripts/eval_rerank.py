@@ -37,7 +37,7 @@ def main():
     import ollama
     from qdrant_client import QdrantClient
 
-    collection = sys.argv[1] if len(sys.argv) > 1 else "recipes_rich"
+    collection = sys.argv[1] if len(sys.argv) > 1 else "recipes_v4"
     q = QdrantClient(url="http://localhost:6333")
     qs = pd.read_csv("eval/queries.csv")
     expected = [str(e).strip() for e in qs["expected_name"]]

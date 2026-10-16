@@ -1,12 +1,18 @@
-collection: recipes_rich, 10 queries
-  vector top-10 (eval.py)                hit@1=0.40 hit@3=0.60 hit@5=0.70 hit@10=0.80 MRR=0.52
-  top-10 + name rerank (the workflow)    hit@1=0.30 hit@3=0.60 hit@5=0.70 hit@10=0.80 MRR=0.46
-  top-30 + name rerank (bigger pool)     hit@1=0.30 hit@3=0.50 hit@5=0.70 hit@10=0.70 MRR=0.43
+collection: recipes_v4, 10 queries
+  vector top-10 (eval.py)                hit@1=0.20 hit@3=0.30 hit@5=0.40 hit@10=0.60 MRR=0.30
+  top-10 + name rerank (the workflow)    hit@1=0.10 hit@3=0.30 hit@5=0.50 hit@10=0.60 MRR=0.26
+  top-30 + name rerank (bigger pool)     hit@1=0.10 hit@3=0.30 hit@5=0.40 hit@10=0.50 MRR=0.24
 
 Misses of the workflow variant (check whether the top results are acceptable near-duplicates):
 - query: quick chocolate oatmeal cookies without baking
     expected: 3 minute no bake cookies
-    got: chocolate oatmeal no bake cookies | chewy oatmeal chocolate chip cookies  no eggs | chocolate oatmeal no bake cookies
+    got: no bake chocolate oatmeal cookies  gluten free | chocolate oatmeal no bake cookies | quick and easy no bake chocolate cookies
+- query: cold salad made with three kinds of beans
+    expected: 3 bean salad
+    got: three bean salad with cilantro chile dressing | cold 3 bean salad | cold green bean salad
 - query: pizza topped with cheese sausage and pepperoni
     expected: 3 c s and a p pizza
-    got: cheese and pepperoni pizza supreme | cheese steak pizza | cheese stuffed crust pizza
+    got: sausage and pepperoni cheese stuffed calzone | sausage onion and pepper pizza | pizza grilled cheese
+- query: easy simple lunch recipe
+    expected: neezy peazy lunch
+    got: quick   easy low cal breakfast or lunch | lunch in a loaf | quick and healthy sweet potato lunch

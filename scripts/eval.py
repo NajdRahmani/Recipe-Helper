@@ -3,7 +3,7 @@ from qdrant_client import QdrantClient
 
 q = QdrantClient(url="http://localhost:6333")
 qs = pd.read_csv("eval/queries.csv")
-COLLECTIONS = ["recipes_fixed", "recipes_struct", "recipes_rich_2k", "recipes_rich"]
+COLLECTIONS = ["recipes_fixed", "recipes_struct", "recipes_rich_2k", "recipes_rich","recipes_v4"]
 
 
 def run(col, k):
