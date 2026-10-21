@@ -3,5 +3,9 @@ data/RAW_recipes.csv
 .env
 eval/images/
 eval/runs/
+<<<<<<< HEAD
 data/
 finetuning/
+=======
+data/
+>>>>>>> 8ce757a2453183a762183c033b15a06fd08fadd2
