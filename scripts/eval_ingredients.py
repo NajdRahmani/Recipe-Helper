@@ -41,5 +41,9 @@ def run(holdout):
     print(f"  vector top-1      : avg missing {m(base_missing):.2f} | missing<=2: {le2(base_missing):.0%} | user-ingredient coverage {m(base_cov):.0%}")
     print(f"  top-40 + rerank   : avg missing {m(rer_missing):.2f} | missing<=2: {le2(rer_missing):.0%} | user-ingredient coverage {m(rer_cov):.0%}")
 
+
+
+
+
 run(holdout=True)
 run(holdout=False)
